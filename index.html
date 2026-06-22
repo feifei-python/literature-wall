@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文献摘录墙</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --paper: #fdfaf4;
+    --paper2: #fff8ee;
+    --ink: #1a1612;
+    --ink2: #4a4540;
+    --ink3: #8a8078;
+    --accent: #c0392b;
+    --accent2: #e67e22;
+    --tag-bg: #e8e0d0;
+    --border: #d5cdc0;
+    --shadow: rgba(26,22,18,0.10);
+    --card-w: 280px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    padding: 28px 40px 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 1.7rem;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  header h1 span {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink3);
+    padding: 4px 10px;
+    background: var(--tag-bg);
+    border-radius: 20px;
+  }
+
+  .count-badge .draft-num {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    padding: 14px 40px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 180px;
+    max-width: 300px;
+    padding: 7px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--ink3); }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  .sort-select {
+    padding: 6px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink2);
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* HEADER BUTTONS */
+  .btn-add {
+    padding: 8px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: #a93226; transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  .btn-export {
+    padding: 8px 16px;
+    background: var(--paper2);
+    color: var(--ink2);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-export:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .btn-export.has-drafts {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(192,57,43,0.04);
+  }
+
+  /* DRAFT BANNER */
+  .draft-banner {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 40px 0;
+    padding: 10px 16px;
+    background: rgba(192,57,43,0.06);
+    border: 1px solid rgba(192,57,43,0.18);
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink2);
+  }
+  .draft-banner.show { display: flex; }
+  .draft-banner strong { color: var(--accent); font-weight: 500; }
+  .draft-banner-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--ink3);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+  }
+  .draft-banner-dismiss:hover { color: var(--ink); }
+
+  /* WALL */
+  .wall-container {
+    padding: 32px 40px;
+  }
+
+  .masonry {
+    columns: var(--card-w) auto;
+    column-gap: 18px;
+  }
+
+  /* CARD */
+  .card {
+    break-inside: avoid;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: transform 0.18s, box-shadow 0.18s;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+  .card:hover::before { background: var(--accent); }
+
+  .card.is-draft::before {
+    background: var(--accent2);
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--accent2),
+      var(--accent2) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
+
+  .card-img-wrap {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .card-img {
+    width: 100%;
+    border-radius: 6px;
+    display: block;
+    border: 1px solid var(--border);
+  }
+  .card-img-wrap.has-link .card-img { cursor: pointer; }
+  .card-img-wrap.no-link .card-img { cursor: zoom-in; }
+  .card-img-zoom {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: rgba(26,22,18,0.55);
+    color: white;
+    border: none;
+    cursor: zoom-in;
+    font-size: 0.9rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .card-img-wrap.has-link .card-img-zoom { display: flex; }
+  .card-img-wrap:hover .card-img-zoom { opacity: 1; }
+
+  .card-text {
+    font-size: 0.875rem;
+    line-height: 1.75;
+    color: var(--ink2);
+    margin-bottom: 12px;
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  .card-note {
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: var(--ink3);
+    font-style: italic;
+    border-left: 2px solid var(--border);
+    padding-left: 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-source {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .card-source-dot {
+    width: 6px; height: 6px;
+    background: var(--accent2);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 3px 8px;
+    background: rgba(192,57,43,0.07);
+    border-radius: 4px;
+    border: 1px solid rgba(192,57,43,0.2);
+    transition: background 0.15s;
+    word-break: break-all;
+    align-self: flex-start;
+  }
+  .card-link:hover { background: rgba(192,57,43,0.14); }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 4px;
+  }
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink2);
+    background: var(--tag-bg);
+    border-radius: 20px;
+    padding: 2px 9px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .tag:hover { background: var(--ink); color: var(--bg); }
+
+  .card-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink3);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .draft-flag {
+    color: var(--accent2);
+    font-style: normal;
+  }
+
+  .card-actions {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .card:hover .card-actions { opacity: 1; }
+
+  .card-action-btn {
+    width: 26px; height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--paper);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    transition: background 0.12s;
+  }
+  .card-action-btn:hover { background: var(--tag-bg); }
+  .card-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--ink3);
+  }
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+  .empty-state p {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 1.1rem;
+    font-style: italic;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,22,18,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(26,22,18,0.3);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+
+  .modal-header {
+    padding: 22px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  .modal-close {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink3);
+    transition: background 0.12s;
+  }
+  .modal-close:hover { background: var(--tag-bg); color: var(--ink); }
+
+  .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--bg);
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(192,57,43,0.04);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .drop-zone-text {
+    font-size: 0.85rem;
+    color: var(--ink3);
+    pointer-events: none;
+  }
+  .drop-zone-text strong { color: var(--accent); }
+  .drop-zone-preview {
+    max-width: 100%; max-height: 180px;
+    border-radius: 6px;
+    display: none;
+  }
+
+  .field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 5px;
+    display: block;
+  }
+  .field-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink3);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .field-hint code {
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.92em;
+    color: var(--ink2);
+  }
+
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper2);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.875rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+  .field-input:focus, .field-textarea:focus { border-color: var(--accent); }
+  .field-input::placeholder, .field-textarea::placeholder { color: var(--ink3); }
+
+  .field-row { display: flex; gap: 12px; }
+  .field-row > * { flex: 1; }
+
+  .modal-footer {
+    padding: 16px 24px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+  }
+  .btn-cancel {
+    padding: 8px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    color: var(--ink2);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-cancel:hover { background: var(--tag-bg); }
+  .btn-save {
+    padding: 8px 22px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #a93226; }
+
+  /* IMAGE VIEW MODAL */
+  .imgview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,8,6,0.85);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+  }
+  .imgview-overlay.open { display: flex; }
+  .imgview-overlay img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .paper-texture {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.7' fill='%23333'/%3E%3C/svg%3E");
+    z-index: 0;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 400;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 600px) {
+    header, .toolbar, .wall-container { padding-left: 16px; padding-right: 16px; }
+    .draft-banner { margin-left: 16px; margin-right: 16px; }
+    .masonry { columns: 1; }
+    header h1 { font-size: 1.3rem; }
+    .btn-add { padding: 6px 14px; font-size: 0.8rem; }
+    .btn-export { padding: 6px 10px; font-size: 0.78rem; }
+    .btn-publish { padding: 6px 12px; font-size: 0.78rem; }
+    .btn-icon { padding: 6px 10px; font-size: 0.9rem; }
+  }
+
+  /* SETTINGS / PUBLISH UI */
+  .btn-icon {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper2);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink2);
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { border-color: var(--ink); color: var(--ink); }
+
+  .btn-publish {
+    padding: 8px 18px;
+    background: linear-gradient(135deg, #2e7d32, #43a047);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(46,125,50,0.25);
+  }
+  .btn-publish:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(46,125,50,0.35); }
+  .btn-publish:active { transform: translateY(0); }
+  .btn-publish:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .settings-intro {
+    font-size: 0.85rem;
+    color: var(--ink2);
+    line-height: 1.7;
+    padding: 12px 14px;
+    background: var(--paper2);
+    border-left: 3px solid var(--accent2);
+    border-radius: 4px;
+  }
+
+  .btn-test {
+    align-self: flex-start;
+    padding: 7px 16px;
+    border: 1.5px solid var(--ink2);
+    border-radius: 6px;
+    background: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-test:hover { background: var(--tag-bg); }
+
+  .test-result {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    min-height: 0;
+    display: none;
+  }
+  .test-result.show { display: block; }
+  .test-result.ok { background: rgba(46,125,50,0.1); color: #2e7d32; border: 1px solid rgba(46,125,50,0.3); }
+  .test-result.err { background: rgba(192,57,43,0.08); color: var(--accent); border: 1px solid rgba(192,57,43,0.25); }
+
+  /* PROGRESS OVERLAY */
+  .progress-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,22,18,0.55);
+    z-index: 250;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .progress-overlay.show { display: flex; }
+  .progress-box {
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 28px 32px;
+    min-width: 320px;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(26,22,18,0.3);
+  }
+  .progress-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .progress-step {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--ink2);
+    margin-bottom: 14px;
+    min-height: 1.2em;
+  }
+  .progress-bar {
+    height: 8px;
+    background: var(--tag-bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink3);
+    margin-top: 10px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="paper-texture"></div>
+
+<header>
+  <h1>文献<span>摘录</span>墙</h1>
+  <div class="header-right">
+    <span class="count-badge" id="countBadge">载入中…</span>
+    <button class="btn-icon" id="btnSettings" onclick="openSettings()" title="GitHub 设置">⚙</button>
+    <button class="btn-publish" id="btnPublish" onclick="publishToGitHub()" title="直接发布到 GitHub" style="display:none">🚀 一键发布</button>
+    <button class="btn-export" id="btnExport" onclick="exportPackage()" title="打包成 zip 下载（备用方案）">📥 导出 zip</button>
+    <button class="btn-add" onclick="openModal()">＋ 新建</button>
+  </div>
+</header>
+
+<div class="draft-banner" id="draftBanner">
+  <span id="draftBannerText">📝 本地有 <strong id="draftCount">0</strong> 张草稿未同步到仓库</span>
+  <button class="draft-banner-dismiss" onclick="dismissBanner()" title="暂时收起">✕</button>
+</div>
+
+<div class="toolbar">
+  <input class="search-box" id="searchBox" placeholder="搜索摘录、来源、标签…" oninput="renderCards()">
+  <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+  <button class="filter-btn" onclick="setFilter('image', this)">含图片</button>
+  <button class="filter-btn" onclick="setFilter('text', this)">纯文字</button>
+  <button class="filter-btn" onclick="setFilter('link', this)">有链接</button>
+  <button class="filter-btn" onclick="setFilter('drafts', this)">本地草稿</button>
+  <select class="sort-select" id="sortSelect" onchange="renderCards()">
+    <option value="newest">最新优先</option>
+    <option value="oldest">最早优先</option>
+    <option value="source">按来源</option>
+  </select>
+</div>
+
+<div class="wall-container">
+  <div class="masonry" id="cardWall"></div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="empty-state-icon">📄</div>
+    <p>还没有摘录——点击右上角"新建"开始</p>
+  </div>
+</div>
+
+<!-- ADD CARD MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新建摘录卡片</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Drop zone -->
+      <div>
+        <label class="field-label">图片（可选）</label>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" accept="image/*" id="fileInput" onchange="handleFileSelect(event)">
+          <img class="drop-zone-preview" id="imgPreview">
+          <div class="drop-zone-text" id="dropText">
+            <strong>拖拽</strong>或<strong>点击</strong>上传图片<br>
+            <small>也可以直接 Ctrl+V 粘贴截图</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text excerpt -->
+      <div>
+        <label class="field-label">摘录文字（可选）</label>
+        <textarea class="field-textarea" id="cardText" rows="4" placeholder="粘贴或输入原文摘录…"></textarea>
+      </div>
+
+      <!-- Note -->
+      <div>
+        <label class="field-label">个人笔记（可选）</label>
+        <textarea class="field-textarea" id="cardNote" rows="2" placeholder="你的理解、批注…"></textarea>
+      </div>
+
+      <!-- Source + Page -->
+      <div class="field-row">
+        <div>
+          <label class="field-label">来源文献</label>
+          <input class="field-input" id="cardSource" placeholder="Zhang et al., 2023">
+        </div>
+        <div>
+          <label class="field-label">页码</label>
+          <input class="field-input" id="cardPage" placeholder="P.12" style="max-width:90px">
+        </div>
+      </div>
+
+      <!-- Link -->
+      <div>
+        <label class="field-label">跳转链接</label>
+        <input class="field-input" id="cardLink" placeholder="https://www.zotero.org/users/USERID/items/ITEMKEY">
+        <div class="field-hint">
+          Zotero 用户推荐用 <code>https://www.zotero.org/users/你的userID/items/itemKey</code> —— 桌面端会直接打开本地 Zotero，手机端会打开 Zotero 网页版。<br>
+          也可以填 DOI、本地 PDF 路径、或任何 URL。
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <label class="field-label">标签（逗号分隔）</label>
+        <input class="field-input" id="cardTags" placeholder="CAV, bilevel, 图表, 方法论…">
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveCard()">保存卡片</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE VIEW -->
+<div class="imgview-overlay" id="imgViewOverlay" onclick="this.classList.remove('open')">
+  <img id="imgViewImg" src="" alt="">
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">GitHub 一键发布设置</span>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-intro">
+        填好下面这些后，"🚀 一键发布"按钮会出现在右上角。点它，网页直接把你的草稿写到 GitHub 仓库（图片 + data.json 一起 commit），不用再手动下载 zip。
+      </div>
+
+      <div>
+        <label class="field-label">GitHub 用户名</label>
+        <input class="field-input" id="cfgOwner" placeholder="caiyindong">
+      </div>
+
+      <div>
+        <label class="field-label">仓库名</label>
+        <input class="field-input" id="cfgRepo" placeholder="literature-wall">
+      </div>
+
+      <div>
+        <label class="field-label">分支</label>
+        <input class="field-input" id="cfgBranch" placeholder="main" value="main">
+      </div>
+
+      <div>
+        <label class="field-label">Personal Access Token</label>
+        <input class="field-input" id="cfgToken" type="password" placeholder="github_pat_xxxxx 或 ghp_xxxxx">
+        <div class="field-hint">
+          去 <code>github.com/settings/personal-access-tokens</code> → Generate new token (fine-grained)：<br>
+          • Repository access：Only selected repositories，选你这一个仓库<br>
+          • Repository permissions → <strong>Contents: Read and write</strong><br>
+          • Expiration：建议 90 天，到期重新生成<br>
+          <span style="color: var(--accent); display:inline-block; margin-top:4px;">⚠ Token 只存在你当前这个浏览器里。换电脑要重新填。如果电脑会被别人用，别填这里——继续用导出 zip 的方式更安全。</span>
+        </div>
+      </div>
+
+      <button class="btn-test" onclick="testGitHubConnection()">测试连接</button>
+      <div id="testResult" class="test-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSettings()">取消</button>
+      <button class="btn-cancel" onclick="clearSettings()" style="color:var(--accent);">清除配置</button>
+      <button class="btn-save" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS OVERLAY -->
+<div class="progress-overlay" id="progressOverlay">
+  <div class="progress-box">
+    <div class="progress-title">正在发布到 GitHub…</div>
+    <div class="progress-step" id="progressStep">准备中</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-hint">期间不要关闭页面</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- JSZip for export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+// 两个独立的来源：仓库里的 data.json（权威）+ localStorage（本地草稿）
+let serverCards = [];           // 来自 data.json
+let localDrafts = [];           // 来自 localStorage，且 id 不在 serverCards 里
+let currentFilter = 'all';
+let editingId = null;
+let pendingImageData = null;
+
+function getMergedCards() {
+  // 服务器版本优先，本地草稿追加在后面
+  return [...serverCards, ...localDrafts];
+}
+
+// ─── Load data.json + localStorage ──────────────────────
+async function loadCardsFromSources() {
+  // 1. 尝试 fetch data.json（如果是通过 file:// 打开，这步会失败，没关系）
+  serverCards = [];
+  try {
+    const resp = await fetch('./data.json', { cache: 'no-store' });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data)) serverCards = data;
+    }
+  } catch (e) {
+    // file:// 或没有 data.json，使用 localStorage 作为唯一来源
+  }
+
+  // 2. 读 localStorage
+  const allLocal = JSON.parse(localStorage.getItem('litCards') || '[]');
+
+  // 3. 同步：localStorage 里 id 已经在 data.json 出现的，认为已发布，从草稿移除
+  const serverIds = new Set(serverCards.map(c => c.id));
+  const stillDrafts = allLocal.filter(c => !serverIds.has(c.id));
+  if (stillDrafts.length !== allLocal.length) {
+    localStorage.setItem('litCards', JSON.stringify(stillDrafts));
+  }
+  localDrafts = stillDrafts;
+
+  updateBadgeAndBanner();
+}
+
+function saveLocalDrafts() {
+  localStorage.setItem('litCards', JSON.stringify(localDrafts));
+  updateBadgeAndBanner();
+}
+
+function updateBadgeAndBanner() {
+  const total = serverCards.length + localDrafts.length;
+  const draftN = localDrafts.length;
+  const badge = document.getElementById('countBadge');
+  if (draftN > 0) {
+    badge.innerHTML = `${total} 张 <span class="draft-num">(含 ${draftN} 草稿)</span>`;
+  } else {
+    badge.textContent = `${total} 张卡片`;
+  }
+
+  const banner = document.getElementById('draftBanner');
+  const bannerText = document.getElementById('draftBannerText');
+  const btnExport = document.getElementById('btnExport');
+  if (draftN > 0 && !sessionStorage.getItem('bannerDismissed')) {
+    const action = isConfigured()
+      ? '点 <strong>🚀 一键发布</strong> 直接同步到 GitHub'
+      : '点 <strong>📥 导出 zip</strong> 再手动上传，或先去 <strong>⚙ 设置</strong> 启用一键发布';
+    bannerText.innerHTML = `📝 本地有 <strong>${draftN}</strong> 张草稿未同步 — ${action}`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+  btnExport.classList.toggle('has-drafts', draftN > 0);
+  updatePublishVisibility();
+}
+
+function dismissBanner() {
+  sessionStorage.setItem('bannerDismissed', '1');
+  document.getElementById('draftBanner').classList.remove('show');
+}
+
+// ─── Render ───────────────────────────────────────────────
+function renderCards() {
+  const wall = document.getElementById('cardWall');
+  const empty = document.getElementById('emptyState');
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  const all = getMergedCards();
+  const serverIds = new Set(serverCards.map(c => c.id));
+
+  let filtered = all.filter(c => {
+    if (currentFilter === 'image' && !c.image) return false;
+    if (currentFilter === 'text' && c.image) return false;
+    if (currentFilter === 'link' && !c.link) return false;
+    if (currentFilter === 'drafts' && serverIds.has(c.id)) return false;
+    if (q) {
+      const hay = [c.text, c.note, c.source, ...(c.tags||[])].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (sort === 'newest') filtered.sort((a,b) => b.created - a.created);
+  else if (sort === 'oldest') filtered.sort((a,b) => a.created - b.created);
+  else if (sort === 'source') filtered.sort((a,b) => (a.source||'').localeCompare(b.source||''));
+
+  if (!filtered.length) {
+    wall.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  wall.innerHTML = filtered.map(c => cardHTML(c, serverIds.has(c.id))).join('');
+}
+
+function cardHTML(c, isPublished) {
+  const isDraft = !isPublished;
+
+  const tagsHtml = (c.tags||[]).map(t =>
+    `<span class="tag" onclick="quickFilterTag('${escAttr(t)}')">#${escHtml(t)}</span>`
+  ).join('');
+
+  let imgHtml = '';
+  if (c.image) {
+    const hasLink = !!c.link;
+    const imgSrc = escAttr(c.image);
+    const linkSafe = c.link ? escAttr(c.link) : '';
+    const clickHandler = hasLink
+      ? `onclick="window.open('${linkSafe}','_blank','noopener')"`
+      : `onclick="viewImage('${imgSrc}')"`;
+    imgHtml = `
+      <div class="card-img-wrap ${hasLink ? 'has-link' : 'no-link'}">
+        <img class="card-img" src="${imgSrc}" alt="摘录图片" ${clickHandler}>
+        ${hasLink ? `<button class="card-img-zoom" onclick="event.stopPropagation();viewImage('${imgSrc}')" title="放大查看">🔍</button>` : ''}
+      </div>`;
+  }
+
+  const textHtml = c.text ? `<div class="card-text">${escHtml(c.text)}</div>` : '';
+  const noteHtml = c.note ? `<div class="card-note">${escHtml(c.note)}</div>` : '';
+  const sourceHtml = c.source
+    ? `<div class="card-source"><span class="card-source-dot"></span>${escHtml(c.source)}${c.page ? ' · ' + escHtml(c.page) : ''}</div>`
+    : '';
+  const linkHtml = c.link
+    ? `<a class="card-link" href="${escAttr(c.link)}" target="_blank" rel="noopener">↗ 跳转原文${c.page ? ' P.' + escHtml(c.page) : ''}</a>`
+    : '';
+  const date = new Date(c.created).toLocaleDateString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // 只有本地草稿才能编辑/删除（已发布的需要去仓库改）
+  const actions = isDraft ? `
+    <div class="card-actions">
+      <button class="card-action-btn" onclick="editCard('${c.id}')" title="编辑">✏️</button>
+      <button class="card-action-btn" onclick="deleteCard('${c.id}')" title="删除">🗑️</button>
+    </div>` : '';
+
+  const timeHtml = `<div class="card-time">
+    ${date}${isDraft ? ' <span class="draft-flag">· 本地草稿</span>' : ''}
+  </div>`;
+
+  return `
+    <div class="card ${isDraft ? 'is-draft' : ''}" data-id="${c.id}">
+      ${actions}
+      ${imgHtml}
+      ${textHtml}
+      ${noteHtml}
+      <div class="card-meta">
+        ${sourceHtml}
+        ${linkHtml}
+        ${tagsHtml ? `<div class="card-tags">${tagsHtml}</div>` : ''}
+        ${timeHtml}
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  // for use inside single-quoted attribute or onclick
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,'\\n');
+}
+
+// ─── Filters ───────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function quickFilterTag(tag) {
+  document.getElementById('searchBox').value = tag;
+  renderCards();
+}
+
+// ─── Modal ───────────────────────────────────────────────
+function openModal(id = null) {
+  editingId = id;
+  pendingImageData = null;
+
+  ['cardText','cardNote','cardSource','cardPage','cardLink','cardTags'].forEach(f => {
+    document.getElementById(f).value = '';
+  });
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('dropText').style.display = 'block';
+
+  if (id) {
+    const c = localDrafts.find(x => x.id === id);
+    if (c) {
+      document.getElementById('cardText').value = c.text || '';
+      document.getElementById('cardNote').value = c.note || '';
+      document.getElementById('cardSource').value = c.source || '';
+      document.getElementById('cardPage').value = c.page || '';
+      document.getElementById('cardLink').value = c.link || '';
+      document.getElementById('cardTags').value = (c.tags||[]).join(', ');
+      if (c.image) {
+        pendingImageData = c.image;
+        showPreview(c.image);
+      }
+    }
+    document.querySelector('.modal-title').textContent = '编辑卡片';
+  } else {
+    document.querySelector('.modal-title').textContent = '新建摘录卡片';
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingId = null;
+  pendingImageData = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function saveCard() {
+  const text = document.getElementById('cardText').value.trim();
+  const note = document.getElementById('cardNote').value.trim();
+  const source = document.getElementById('cardSource').value.trim();
+  const page = document.getElementById('cardPage').value.trim();
+  const link = document.getElementById('cardLink').value.trim();
+  const tagsRaw = document.getElementById('cardTags').value;
+  const tags = tagsRaw.split(/[,，]/).map(t=>t.trim()).filter(Boolean);
+
+  if (!text && !pendingImageData && !note) {
+    alert('请至少填写图片、文字或笔记');
+    return;
+  }
+
+  if (editingId) {
+    const idx = localDrafts.findIndex(c => c.id === editingId);
+    if (idx >= 0) {
+      localDrafts[idx] = { ...localDrafts[idx], text, note, source, page, link, tags, image: pendingImageData };
+    }
+  } else {
+    localDrafts.unshift({
+      id: 'd' + Date.now().toString(),
+      image: pendingImageData,
+      text, note, source, page, link, tags,
+      created: Date.now()
+    });
+    showToast('已保存为本地草稿');
+  }
+
+  saveLocalDrafts();
+  renderCards();
+  closeModal();
+}
+
+function deleteCard(id) {
+  if (!confirm('删除这张本地草稿？')) return;
+  localDrafts = localDrafts.filter(c => c.id !== id);
+  saveLocalDrafts();
+  renderCards();
+}
+
+function editCard(id) { openModal(id); }
+
+// ─── Image upload ─────────────────────────────────────────
+function showPreview(src) {
+  const preview = document.getElementById('imgPreview');
+  const dropText = document.getElementById('dropText');
+  preview.src = src;
+  preview.style.display = 'block';
+  dropText.style.display = 'none';
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readImageFile(file);
+}
+
+function readImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingImageData = e.target.result;
+    showPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) readImageFile(file);
+});
+
+document.addEventListener('paste', e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        if (!document.getElementById('modalOverlay').classList.contains('open')) {
+          openModal();
+          setTimeout(() => readImageFile(file), 100);
+        } else {
+          readImageFile(file);
+        }
+      }
+      break;
+    }
+  }
+});
+
+function viewImage(src) {
+  document.getElementById('imgViewImg').src = src;
+  document.getElementById('imgViewOverlay').classList.add('open');
+}
+
+// ─── EXPORT: 打包成 zip ───────────────────────────────────
+async function exportPackage() {
+  if (!window.JSZip) {
+    alert('JSZip 还没加载完，稍等一下再试');
+    return;
+  }
+  const all = getMergedCards();
+  if (!all.length) {
+    alert('还没有任何卡片，没东西可导出');
+    return;
+  }
+
+  const zip = new JSZip();
+  const imagesFolder = zip.folder('images');
+  const exportCards = [];
+
+  for (const card of all) {
+    const exported = { ...card };
+    if (card.image && card.image.startsWith('data:')) {
+      // base64 → 拆成文件
+      const match = card.image.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        const mime = match[1];
+        const data = match[2];
+        let ext = (mime.split('/')[1] || 'png').toLowerCase();
+        if (ext === 'jpeg') ext = 'jpg';
+        if (ext === 'svg+xml') ext = 'svg';
+        const filename = `${card.id}.${ext}`;
+        imagesFolder.file(filename, data, { base64: true });
+        exported.image = `images/${filename}`;
+      }
+    }
+    // 如果 image 已经是相对路径（来自 data.json），保持原样
+    exportCards.push(exported);
+  }
+
+  zip.file('data.json', JSON.stringify(exportCards, null, 2));
+  zip.file('README.txt',
+`这个包是从"文献摘录墙"网页导出的。
+
+如何使用：
+1. 解压这个 zip
+2. 把里面的 data.json 替换掉你 GitHub 仓库根目录的 data.json
+3. 把 images/ 文件夹里的所有图片，复制到仓库的 images/ 文件夹里
+   （只新增，不要删除已有的图片）
+4. git add . && git commit -m "update wall" && git push
+5. 等 GitHub Pages 重新部署（通常 30 秒到 1 分钟），刷新网页即可看到
+
+导出时间：${new Date().toLocaleString('zh-CN')}
+卡片总数：${exportCards.length}
+`);
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const today = new Date().toISOString().split('T')[0];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wall-${today}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+
+  showToast(`已导出 ${exportCards.length} 张卡片`);
+}
+
+// ─── Toast ───────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── Keyboard ───────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    document.getElementById('imgViewOverlay').classList.remove('open');
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+    e.preventDefault();
+    openModal();
+  }
+});
+
+// ─── GitHub 配置与一键发布 ───────────────────────────────
+let config = { owner: '', repo: '', branch: 'main', token: '' };
+
+function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('litWallConfig') || 'null');
+    if (saved) config = { ...config, ...saved };
+  } catch (e) {}
+}
+
+function isConfigured() {
+  return !!(config.owner && config.repo && config.token);
+}
+
+function updatePublishVisibility() {
+  const btn = document.getElementById('btnPublish');
+  if (!btn) return;
+  if (isConfigured() && localDrafts.length > 0) {
+    btn.style.display = '';
+    btn.disabled = false;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// ─── 设置弹窗 ───────────────────────────────────────────
+function openSettings() {
+  document.getElementById('cfgOwner').value = config.owner || '';
+  document.getElementById('cfgRepo').value = config.repo || '';
+  document.getElementById('cfgBranch').value = config.branch || 'main';
+  document.getElementById('cfgToken').value = config.token || '';
+  document.getElementById('testResult').className = 'test-result';
+  document.getElementById('testResult').textContent = '';
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function saveSettings() {
+  config = {
+    owner: document.getElementById('cfgOwner').value.trim(),
+    repo: document.getElementById('cfgRepo').value.trim(),
+    branch: document.getElementById('cfgBranch').value.trim() || 'main',
+    token: document.getElementById('cfgToken').value.trim()
+  };
+  localStorage.setItem('litWallConfig', JSON.stringify(config));
+  closeSettings();
+  updateBadgeAndBanner();
+  if (isConfigured()) showToast('✓ GitHub 配置已保存');
+}
+
+function clearSettings() {
+  if (!confirm('清除 GitHub 配置？token 也会一起删掉。')) return;
+  config = { owner: '', repo: '', branch: 'main', token: '' };
+  localStorage.removeItem('litWallConfig');
+  closeSettings();
+  updateBadgeAndBanner();
+  showToast('配置已清除');
+}
+
+async function testGitHubConnection() {
+  const owner = document.getElementById('cfgOwner').value.trim();
+  const repo = document.getElementById('cfgRepo').value.trim();
+  const token = document.getElementById('cfgToken').value.trim();
+  const branch = document.getElementById('cfgBranch').value.trim() || 'main';
+  const result = document.getElementById('testResult');
+
+  if (!owner || !repo || !token) {
+    result.className = 'test-result show err';
+    result.textContent = '请把用户名、仓库、token 都填好';
+    return;
+  }
+  result.className = 'test-result show';
+  result.textContent = '测试中…';
+
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json'
+      }
+    });
+    if (!r.ok) {
+      result.className = 'test-result show err';
+      result.textContent = `✗ 失败 ${r.status}：${r.status === 404 ? '仓库不存在或 token 没权限' : r.statusText}`;
+      return;
+    }
+    const data = await r.json();
+    if (!data.permissions || !data.permissions.push) {
+      result.className = 'test-result show err';
+      result.textContent = '⚠ 连上了但 token 没有写入权限，需要 Contents: Read and write';
+      return;
+    }
+    // 还要测分支
+    const br = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!br.ok) {
+      result.className = 'test-result show err';
+      result.textContent = `⚠ 仓库找到了，但分支 "${branch}" 不存在`;
+      return;
+    }
+    result.className = 'test-result show ok';
+    result.textContent = `✓ 连接成功，有写入权限，分支 ${branch} 可用`;
+  } catch (e) {
+    result.className = 'test-result show err';
+    result.textContent = `✗ 网络错误：${e.message}`;
+  }
+}
+
+// ─── GitHub API helpers ─────────────────────────────────
+function ghHeaders() {
+  return {
+    'Authorization': `Bearer ${config.token}`,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'Content-Type': 'application/json'
+  };
+}
+
+function utf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+// 智能 PUT：如果文件已存在会自动拿 sha 再 PUT 一次
+async function putFile(path, base64Content, message) {
+  const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+  const body = (sha) => JSON.stringify({
+    message, content: base64Content, branch: config.branch || 'main',
+    ...(sha ? { sha } : {})
+  });
+
+  let resp = await fetch(url, { method: 'PUT', headers: ghHeaders(), body: body() });
+  if (resp.status === 422 || resp.status === 409) {
+    // 可能是文件已存在，GET 一下拿 sha 再来
+    const getResp = await fetch(`${url}?ref=${config.branch || 'main'}&t=${Date.now()}`, { headers: ghHeaders() });
+    if (getResp.ok) {
+      const { sha } = await getResp.json();
+      resp = await fetch(url, { method: 'PUT', headers: ghHeaders(), body: body(sha) });
+    }
+  }
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`${path}: ${resp.status} ${txt.slice(0, 200)}`);
+  }
+  return resp.json();
+}
+
+// ─── 进度遮罩 ───────────────────────────────────────────
+function showProgress(step) {
+  document.getElementById('progressStep').textContent = step;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressOverlay').classList.add('show');
+}
+function updateProgress(step, done, total) {
+  document.getElementById('progressStep').textContent = step;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+function hideProgress() {
+  document.getElementById('progressOverlay').classList.remove('show');
+}
+
+// ─── 一键发布 ───────────────────────────────────────────
+async function publishToGitHub() {
+  if (!isConfigured()) { openSettings(); return; }
+  const drafts = [...localDrafts];
+  if (!drafts.length) { showToast('没有草稿可发布'); return; }
+
+  const imagesNeedingUpload = drafts.filter(c => c.image && c.image.startsWith('data:'));
+  const totalSteps = imagesNeedingUpload.length + 1; // images + data.json
+  let stepNum = 0;
+
+  showProgress(`准备发布 ${drafts.length} 张卡片…`);
+
+  try {
+    // 1. 上传所有 base64 图片
+    const publishedCards = [];
+    for (const draft of drafts) {
+      const newCard = { ...draft };
+      if (draft.image && draft.image.startsWith('data:')) {
+        stepNum++;
+        updateProgress(`上传图片 ${stepNum}/${imagesNeedingUpload.length}`, stepNum, totalSteps);
+        const m = draft.image.match(/^data:([^;]+);base64,(.+)$/);
+        if (!m) throw new Error(`图片格式无法识别：${draft.id}`);
+        let ext = (m[1].split('/')[1] || 'png').toLowerCase();
+        if (ext === 'jpeg') ext = 'jpg';
+        if (ext === 'svg+xml') ext = 'svg';
+        const filename = `${draft.id}.${ext}`;
+        const path = `images/${filename}`;
+        await putFile(path, m[2], `Add image ${filename}`);
+        newCard.image = path;
+      }
+      publishedCards.push(newCard);
+    }
+
+    // 2. 写 data.json
+    updateProgress('写入 data.json…', stepNum + 0.5, totalSteps);
+    const merged = [...serverCards, ...publishedCards];
+    const jsonText = JSON.stringify(merged, null, 2);
+    await putFile('data.json', utf8ToBase64(jsonText), `Publish ${publishedCards.length} card(s)`);
+
+    updateProgress('完成', totalSteps, totalSteps);
+
+    // 3. 内存同步
+    serverCards = merged;
+    localDrafts = [];
+    localStorage.setItem('litCards', '[]');
+
+    setTimeout(() => {
+      hideProgress();
+      renderCards();
+      updateBadgeAndBanner();
+      showToast(`✓ 已发布 ${publishedCards.length} 张到 GitHub。30-60 秒后其他设备可见`);
+    }, 400);
+
+  } catch (e) {
+    hideProgress();
+    console.error('发布失败：', e);
+    alert(
+      `发布失败：${e.message}\n\n` +
+      `如果只是部分图片上传成功，再点一次"一键发布"会自动重试已存在的文件。` +
+      `如果反复失败，用"📥 导出 zip"作为备用方案。`
+    );
+  }
+}
+
+
+// ─── Init ───────────────────────────────────────────────
+(async function init() {
+  loadConfig();
+  await loadCardsFromSources();
+  renderCards();
+  updatePublishVisibility();
+})();
+</script>
+</body>
+</html>
